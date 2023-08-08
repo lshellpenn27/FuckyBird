@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flappy Bird</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; background-color: skyblue; margin: auto; }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="600" height="400"></canvas>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Bird properties
+        let bird = {
+            x: 150,
+            y: canvas.height / 2,
+            size: 15,
+            dy: 1,
+            flapSpeed: -3, // Reduced the flap speed to make the jump smaller
+            gravity: 0.25,
+        };
+
+        // Cloud properties
+        let clouds = [];
+        for (let i = 0; i < 5; i++) {
+            clouds.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height / 2,
+                size: 20 + Math.random() * 20,
+            });
+        }
+
+        // Pipe properties
+        let pipes = [];
+        let pipeWidth = 50;
+        let pipeSpacing = 250;
+        let pipeFrequency = 150;
+
+        function drawBird() {
+            ctx.fillStyle = 'purple';
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 2;
+
+            // Body
+            ctx.beginPath();
+            ctx.arc(bird.x, bird.y, bird.size, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // Eyes
+            ctx.fillStyle = 'green';
+            ctx.beginPath();
+            ctx.arc(bird.x + 5, bird.y - 5, bird.size / 4, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Beak
+            ctx.fillStyle = 'orange';
+            ctx.beginPath();
+            ctx.moveTo(bird.x + 8, bird.y - 2);
+            ctx.lineTo(bird.x + 18, bird.y);
+            ctx.lineTo(bird.x + 8, bird.y + 2);
+            ctx.fill();
+        }
+
+        function drawClouds() {
+            ctx.fillStyle = 'white';
+            for (let cloud of clouds) {
+                ctx.beginPath();
+                ctx.arc(cloud.x, cloud.y, cloud.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function drawPipes() {
+            ctx.fillStyle = 'green';
+            for (let pipe of pipes) {
+                ctx.fillRect(pipe.x, 0, pipeWidth, pipe.topHeight);
+                ctx.fillRect(pipe.x, canvas.height - pipe.bottomHeight, pipeWidth, pipe.bottomHeight);
+            }
+        }
+
+        function update() {
+    bird.y += bird.dy;
+    bird.dy += bird.gravity;
+
+    // Stop the bird at the bottom and restart game
+    if (bird.y + bird.size >= canvas.height) {
+        bird.y = canvas.height - bird.size;
+        restartGame();
+    }
+
+            if (clouds[0].x + clouds[0].size < 0) {
+                clouds.shift();
+                clouds.push({
+                    x: canvas.width + 20,
+                    y: Math.random() * canvas.height / 2,
+                    size: 20 + Math.random() * 20,
+                });
+            }
+
+            if (pipes.length === 0 || pipes[pipes.length - 1].x < canvas.width - pipeFrequency) {
+                let topHeight = Math.random() * (canvas.height - pipeSpacing);
+                let bottomHeight = canvas.height - pipeSpacing - topHeight;
+                pipes.push({
+                    x: canvas.width,
+                    topHeight: topHeight,
+                    bottomHeight: bottomHeight,
+                });
+            }
+
+            for (let pipe of pipes) {
+                pipe.x -= 2;
+            }
+
+            if (pipes[0].x + pipeWidth < 0) {
+                pipes.shift();
+            }
+
+            for (let cloud of clouds) {
+                cloud.x -= 1;
+            }
+        }
+
+function detectCollisions() {
+    for (let pipe of pipes) {
+        if (
+            bird.x + bird.size > pipe.x && 
+            bird.x - bird.size < pipe.x + pipeWidth && 
+            (bird.y - bird.size < pipe.topHeight || 
+            bird.y + bird.size > canvas.height - pipe.bottomHeight)
+        ) {
+            restartGame();
+        }
+    }
+}
+
+function restartGame() {
+    bird.y = canvas.height / 2;
+    bird.dy = 1;
+    pipes = [];
+}
+
+
+        function draw() {
+            ctx.fillStyle = 'skyblue'; // Lightened the sky color
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            drawClouds();
+            drawPipes();
+            drawBird();
+
+            update();
+
+            requestAnimationFrame(draw);
+
+detectCollisions();
+
+    requestAnimationFrame(draw);
+}
+
+        }
+
+        document.addEventListener('keydown', function (e) {
+            if (e.code === 'Space') {
+                bird.dy = bird.flapSpeed;
+            }
+        });
+
+        draw();
+    </script>
+</body>
+</html>
